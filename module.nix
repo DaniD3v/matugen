@@ -13,6 +13,10 @@ in {
   options.programs.matugen = {
     enable = lib.mkEnableOption "Matugen declarative theming";
 
+    package = lib.mkPackageOption pkgs "matugen" {
+      default = matugen.packages.${pkgs.system}.default;
+    };
+
     wallpaper = lib.mkOption {
       type = with lib.types; nullOr path;
       default = osCfg.wallpaper or null;
@@ -67,8 +71,6 @@ in {
   };
 
   config = let
-    package = matugen.packages.${pkgs.system}.default;
-
     mergedCfg =
       cfg.settings
       // (
@@ -80,10 +82,10 @@ in {
     configFile = tomlFormat.generate "config.toml" mergedCfg;
   in
     lib.mkIf cfg.enable {
-      home.packages = [package];
+      home.packages = [cfg.package];
 
       home.activation.matugenCopyWallpapers = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        ${package}/bin/matugen image ${cfg.wallpaper} --config ${configFile}
+        ${cfg.package}/bin/matugen image ${cfg.wallpaper} --config ${configFile}
       '';
 
       xdg.configFile."matugen/config.toml".source =
